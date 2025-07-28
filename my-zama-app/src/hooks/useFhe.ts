@@ -1,9 +1,8 @@
-import { type EIP712, type FhevmInstance } from '@zama-fhe/relayer-sdk/bundle';
 import { useContext, createContext } from 'react';
 
 export type FhevmContextType = {
-  instance: FhevmInstance;
-  eip712: EIP712;
+  instance: any;
+  eip712: any;
   setSignature: (signature: string) => void;
   decrypt: (
     handle: string,

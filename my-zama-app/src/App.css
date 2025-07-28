@@ -47,7 +47,6 @@ body {
 
 .popup-left {
   width: 90vw;
-  max-width: 90vw;
   max-width: 500px;
   height: 90vh;
   max-height: 500px;
@@ -76,9 +75,37 @@ body {
 }
 
 /* ===================== Popup Right ===================== */
+/* ===== MAINPANEL INFO (phía trên panel phải) ===== */
+.mainpanel-info {
+  margin-bottom: 18px;
+  background: transparent;
+  padding: 0 0 8px 0;
+}
+.popup-header-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.popup-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+.popup-header-meta img {
+  width: 22px;
+  height: 22px;
+}
+.popup-header-desc {
+  margin-top: 2px;
+  color: #aaa;
+  font-size: 15px;
+}
+
+/* ====== POPUP RIGHT 3 BLOCKS ====== */
 .popup-right {
   width: 90vw;
-  max-width: 90vw;
   max-width: 400px;
   height: 90vh;
   max-height: 500px;
@@ -87,7 +114,6 @@ body {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   font-family: sans-serif;
   color: #fff;
   box-sizing: border-box;
@@ -170,9 +196,11 @@ body {
 }
 
 .popup-stages-price-line {
-  font-size: 14px;
+  font-size: 15px;
   color: #fff;
-  margin-top: 20px;
+  margin-bottom: 16px;
+  margin-top: 0;
+  font-weight: 500;
 }
 
 /* ===================== 3. Progress Card Price, Quantity, Mint Fee ===================== */
@@ -184,12 +212,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 0px;
+  margin-bottom: 12px;
 }
 
 .popup-mint-status-row {
   display: flex;
   gap: 8px;
+  margin-bottom: 10px;
 }
 
 /* Thẻ mini-card chung */
@@ -463,24 +492,65 @@ body {
   color: #f55;
 }
 
-/* ===== Balance box ===== */
-
-.balance-box {
-  height: 6vh;
-  max-height: 36px;
-  line-height: 40px;
-  background-color: #111;
-  color: #fff;
-  border-radius: 6px;
-  text-align: center;
+/* ====== Balance box ===== */
+.balance-faucet-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.balance-btn, .faucet-button {
+  flex: 1 1 0;
+  padding: 8px 0;
   font-size: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #222;
+  color: #fff;
+  text-align: center;
+  cursor: default;
+}
+.faucet-button {
+  background: #444;
+  color: #fff;
   cursor: pointer;
-  transition: box-shadow 0.3s;
+  border: 1px solid rgba(0,255,136,0.15);
+  transition: background 0.2s;
+}
+.faucet-button:hover:enabled {
+  background: #00b894;
+  color: #000;
+}
+.balance-btn:disabled {
+  opacity: 1;
 }
 
-.balance-box:hover {
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.balance-btn {
+  flex: 1 1 0;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #222;
+  color: #fff;
+  text-align: center;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.token-logo {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.balance-btn span {
+  margin: 0 8px;
 }
 
 .native-balance {
@@ -505,6 +575,22 @@ body {
 
 .faucet-button:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.faucet-box {
+  background-color: #111;
+  color: #fff;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.faucet-box strong {
+  font-size: 15px;
+  color: #00ff88;
+  display: block;
+  margin-bottom: 6px;
 }
 
 /* ===================== USER PANEL ===================== */
@@ -606,4 +692,28 @@ body {
   width: 24px;
   height: 24px;
   filter: brightness(1.2);
+}
+
+.main-panel-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.mainpanel-info {
+  /* chiều cao tự nhiên */
+}
+.popup-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* các style khác giữ nguyên */
+}
+
+.auction-status-card {
+  background: #232323;
+  border-radius: 8px;
+  border: 1px solid rgba(0,255,136,0.10);
+  padding: 14px 14px 10px 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
 }

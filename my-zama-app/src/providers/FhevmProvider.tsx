@@ -1,4 +1,4 @@
-// ✅ FhevmProvider.tsx (có log kiểm tra đầy đủ)
+// ✅ FhevmProvider.tsx (đã fix không load SDK do thiếu ví)
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   initSDK,
@@ -18,15 +18,25 @@ declare global {
 }
 
 export function FhevmProvider({ children }: { children: ReactNode }) {
-  const { address: account } = useWallet();
+  const { address: account, connect } = useWallet();
   const [instance, setInstance] = useState<FhevmInstance>();
   const [eip712, setEip712] = useState<EIP712>();
   const [signature, setSignature] = useState<string>();
 
   useEffect(() => {
     (async () => {
-      if (!account) return; // chỉ chạy khi account có
-      console.log('🔧 Initializing FHEVM SDK...');
+      if (!window.ethereum) {
+        console.warn('⚠️ No Ethereum provider found.');
+        return;
+      }
+
+      if (!account) {
+        console.log('🕐 No wallet connected. Attempting to connect...');
+        await connect(); // <- Tự động connect ví
+        return; // Chờ lần sau effect chạy lại
+      }
+
+      console.log('🔧 Initializing FHEVM SDK for:', account);
 
       try {
         await initSDK();
@@ -37,15 +47,12 @@ export function FhevmProvider({ children }: { children: ReactNode }) {
           network: window.ethereum,
         });
 
-        console.log('✅ FHEVM SDK instance created:', i);
-        console.log('🔍 instance.createEncryptedInput:', typeof i.createEncryptedInput);
-        console.log('🔍 instance.generateKeypair:', typeof i.generateKeypair);
-
+        console.log('✅ FHEVM instance:', i);
         const { publicKey } = i.generateKeypair();
         console.log('🔑 publicKey:', publicKey);
 
         const eip = i.createEIP712(publicKey, [], Date.now(), 365);
-        console.log('📜 EIP712 object created:', eip);
+        console.log('📜 EIP712 object created');
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
@@ -54,15 +61,15 @@ export function FhevmProvider({ children }: { children: ReactNode }) {
           { [eip.primaryType]: eip.types[eip.primaryType] },
           eip.message
         );
+
         console.log('✍️ EIP-712 signature created');
 
         setInstance(i);
         setEip712(eip);
         setSignature(sig);
-
-        console.log('✅ FHEVM SDK setup complete');
+        console.log('✅ FHEVM setup complete');
       } catch (err) {
-        console.error('❌ FHEVM SDK setup failed:', err);
+        console.error('❌ Failed to initialize FHEVM:', err);
       }
     })();
   }, [account]);
@@ -78,7 +85,7 @@ export function FhevmProvider({ children }: { children: ReactNode }) {
         eip712,
         signature,
         setSignature,
-        decrypt: () => Promise.resolve(undefined),
+        decrypt: () => Promise.resolve(undefined), // Bạn có thể cập nhật sau nếu cần decrypt riêng
       }}
     >
       {children}

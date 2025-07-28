@@ -24,11 +24,6 @@ async function main() {
   const contractAddress = await contract.getAddress();
   console.log("✅ AuctionManager deployed to:", contractAddress);
 
-  // ✅ Update .env of frontend
-  const envPath = "../my-zama-app/.env";
-  const envLine = `VITE_AUCTION_V1_ADDRESS=${contractAddress}\n`;
-  fs.writeFileSync(envPath, envLine, { encoding: "utf-8" });
-  console.log("📦 Updated frontend .env with contract address.");
 
   const tx = await contract.createAuction(
     nftAddress,

@@ -1,7 +1,7 @@
 import { useFhevm } from './useFhevm';
 import { useWallet } from './useWallet';
 
-const CONTRACT_ADDRESS = '0xd4c85d749b9f69a1e03d78297e8d914a624838ea';
+const CONTRACT_ADDRESS = import.meta.env.VITE_AUCTION_V1_ADDRESS!;
 
 export const useTestFhevm = () => {
   const { instance } = useFhevm();
@@ -11,10 +11,24 @@ export const useTestFhevm = () => {
     if (!instance || !userAddress) {
       throw new Error('FHEVM or user address not ready');
     }
+
     try {
       const ciphertext = await instance.createEncryptedInput(CONTRACT_ADDRESS, userAddress);
-      console.log('DEBUG ciphertext:', ciphertext);
-      return ciphertext;
+
+      // Test encrypt một giá trị 123 (có thể thay đổi)
+      ciphertext.add32(123);
+
+      const { handles, inputProof } = await ciphertext.encrypt();
+
+      console.log('🔐 handle:', handles[0]);
+      console.log('📜 proof:', inputProof);
+      console.log('📦 ciphertext (full):', ciphertext);
+
+      return {
+        handle: handles[0],
+        proof: inputProof,
+        ciphertext,
+      };
     } catch (err) {
       console.error('‼️ SDK.createEncryptedInput error:', err);
       throw err;
@@ -22,4 +36,4 @@ export const useTestFhevm = () => {
   };
 
   return { testEncrypt };
-}; 
+};

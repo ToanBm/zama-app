@@ -10,6 +10,7 @@ import { CHAINS } from "../utils/chains";
 import CustomNetworkSelector from "./CustomNetworkSelector";
 import { ethers } from "ethers";
 import { FAUCET_ABI } from "../abi/faucetAbi";
+import { useZUSDBalance } from "../hooks/useZUSDBalance";
 
 let lastFetchTime = 0;
 
@@ -18,6 +19,7 @@ function WalletPanel({ onWalletConnected }) {
     const [walletAddress, setWalletAddress] = useState("");
     const [selectedChain, setSelectedChain] = useState("SEPOLIA");
     const [balance, setBalance] = useState(null);
+    const zUSDBalance = useZUSDBalance(walletAddress);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -127,7 +129,10 @@ function WalletPanel({ onWalletConnected }) {
         }
     }
 
-    const FAUCET_ADDRESS = "0x000000000000000000000000000000000000dead";
+    const FAUCET_ABI = [
+      "function claim() external"
+    ];
+    const FAUCET_ADDRESS = import.meta.env.VITE_FAUCET_ADDRESS!;
 
     async function handleFaucet() {
         if (!signer || !walletAddress) {
@@ -136,14 +141,19 @@ function WalletPanel({ onWalletConnected }) {
         }
         try {
             const contract = new ethers.Contract(FAUCET_ADDRESS, FAUCET_ABI, signer);
-            const tx = await contract.requestTokens(walletAddress);
+            const tx = await contract.claim();
             await tx.wait();
-            alert("✅ 0.01 Sepolia ETH sent to your wallet!");
+            alert("✅ 0.01 ETH và zUSD đã được gửi vào ví của bạn!");
             await loadBalance(signer.provider, walletAddress);
         } catch (err) {
             console.error("Faucet error:", err);
             alert("❌ Faucet failed: " + (err?.reason || err?.message || err));
         }
+    }
+
+    function handleFaucetZUSD() {
+        // Nếu faucet trả cả ETH và zUSD, chỉ cần gọi handleFaucet
+        handleFaucet();
     }
 
     return (
@@ -165,11 +175,22 @@ function WalletPanel({ onWalletConnected }) {
                 />
             </div>
 
-            <div className="balance-box">
-                Balance: {balance ?? "—"} {getNativeTokenSymbol()}
+            {/* Balance Section */}
+            <div className="balance-row">
+                <button className="balance-btn" disabled>
+                    <img src="/icon/megaeth.png" alt="ETH" className="token-logo" />
+                    {balance ?? "—"} ETH
+                    <span>-</span>
+                    <img src="/icon/monad.png" alt="zUSD" className="token-logo" />
+                    {zUSDBalance} zUSD
+                </button>
             </div>
-
-            <button className="faucet-button" onClick={handleFaucet}>Faucet</button>
+            {/* Faucet Button gộp */}
+            <div className="balance-faucet-row">
+                <button className="faucet-button" onClick={() => { handleFaucet(); handleFaucetZUSD(); }}>
+                    Faucet
+                </button>
+            </div>
         </div>
     );
 }

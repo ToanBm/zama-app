@@ -200,7 +200,8 @@ contract AuctionManager is SepoliaConfig {
         emit NftClaimed(auctionId, msg.sender);
     }
 
-    function getBidders(uint256 auctionId) external view returns (address[] memory) {
-        return auctions[auctionId].bidders;
+    function getBidProof(uint256 auctionId, address bidder) external view returns (bytes memory) {
+    return auctions[auctionId].bids[bidder].proof;
     }
+
 }

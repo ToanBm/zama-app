@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { AUCTION_ABI } from "../abi/auctionAbi";
-import { AUCTION_ADDRESS } from "../abi/auctionAddress";
+import { AUCTION_ABI_V1 } from "../abi/auctionAbi_v1";
 import { useBid } from "../hooks/useBid";
 
-// Dummy data cho NFT, sẽ thay bằng props hoặc fetch từ contract sau
+const AUCTION_ADDRESS = import.meta.env.VITE_AUCTION_V1_ADDRESS!;
+console.log("AUCTION_ADDRESS:", AUCTION_ADDRESS);
+
 const nft = {
-  image: "/icon/github.svg", // Thay bằng ảnh NFT thật
+  image: "/icon/github.svg",
   name: "DreamHackers",
   networkIcon: "/icon/x.svg",
 };
 const mintFee = 0;
 const isMintLive = true;
-const symbol = "ETH";
+const symbol = "zUSD";
 
 function formatCountdown(ms: number) {
   if (ms < 0) return "Ended";
@@ -26,23 +27,34 @@ function formatCountdown(ms: number) {
 const MainPanel: React.FC = () => {
   const [bidAmount, setBidAmount] = useState<string>("");
   const [minting, setMinting] = useState(false);
-  const [signer] = useState(true); // Giả lập đã kết nối ví
+  const [signer] = useState(true);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [reservePrice, setReservePrice] = useState<string | null>(null);
   const { placeBidFhe } = useBid();
 
+  const auctionId = 0;
+
   useEffect(() => {
     async function fetchAuctionInfo() {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
-        const contract = new ethers.Contract(AUCTION_ADDRESS, AUCTION_ABI, provider);
-        const start = await contract.startTime();
-        const end = await contract.endTime();
-        const reserve = await contract.reservePrice();
+        const contract = new ethers.Contract(AUCTION_ADDRESS, AUCTION_ABI_V1, provider);
+        const auction = await contract.auctions(auctionId);
+        const start = auction.startTime;
+        const end = auction.endTime;
+        let reserve = auction.reservePrice;
+        let reserveNumber = "";
+        if (typeof reserve === "bigint" || typeof reserve === "number") {
+          reserveNumber = reserve.toString();
+        } else if (typeof reserve === "string") {
+          reserveNumber = BigInt(reserve).toString();
+        } else {
+          reserveNumber = "0";
+        }
+        setReservePrice(reserveNumber);
         setStartTime(Number(start));
         setEndTime(Number(end));
-        setReservePrice(ethers.formatEther(reserve));
       } catch (err) {
         console.error("Error fetching auction info:", err);
       }
@@ -67,40 +79,39 @@ const MainPanel: React.FC = () => {
       : 100;
 
   const handleIncrease = () => {
-    let current = parseFloat(bidAmount);
-    let base = reservePrice ? parseFloat(reservePrice) : 0;
+    let current = parseInt(bidAmount, 10);
+    let base = reservePrice ? parseInt(reservePrice, 10) : 0;
     if (isNaN(current) || current < base) {
       current = base;
     }
-    const next = Math.round((current + 0.01) * 100) / 100;
-    setBidAmount(next.toFixed(2));
+    const next = current + 1;
+    setBidAmount(next.toString());
   };
 
   const handleDecrease = () => {
-    let current = parseFloat(bidAmount);
-    let base = reservePrice ? parseFloat(reservePrice) : 0;
+    let current = parseInt(bidAmount, 10);
+    let base = reservePrice ? parseInt(reservePrice, 10) : 0;
     if (isNaN(current) || current <= base) {
-      setBidAmount(base.toFixed(2));
+      setBidAmount(base.toString());
       return;
     }
-    let next = Math.round((current - 0.01) * 100) / 100;
+    let next = current - 1;
     if (next < base) next = base;
-    setBidAmount(next.toFixed(2));
+    setBidAmount(next.toString());
   };
 
   const handleBidInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
-    // Chỉ cho phép tối đa 2 số thập phân
-    if (/^\d*(\.\d{0,2})?$/.test(value)) {
+    if (/^\d*$/.test(value)) {
       setBidAmount(value);
     }
   };
 
   const handleBid = async () => {
-    if (!bidAmount || !reservePrice || parseFloat(bidAmount) < parseFloat(reservePrice)) return;
+    if (!bidAmount || !reservePrice || parseInt(bidAmount) < parseInt(reservePrice)) return;
     setMinting(true);
     try {
-      await placeBidFhe(Number(bidAmount));
+      await placeBidFhe(auctionId, Number(bidAmount));
       alert("Bid thành công!");
     } catch (err: any) {
       alert("Bid thất bại: " + (err?.reason || err?.message || err));
@@ -113,91 +124,109 @@ const MainPanel: React.FC = () => {
       <div className="popup-left">
         <img src={nft.image} alt={nft.name} className="popup-image" />
       </div>
-      <div className="popup-right">
-        <div className="popup-header-card">
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <div className="mainpanel-info">
           <div className="popup-header-title">{nft.name}</div>
-          {nft.networkIcon && (
-            <div className="popup-header-icon">
-              <img src={nft.networkIcon} alt="net" className="popup-network-icon" />
+          <div className="popup-header-meta">
+            <img src="/icon/monad.png" alt="Network" />
+            <img src="/icon/monad.png" alt="Contract" />
+            <div className="social-icons">
+              <a href="https://github.com/ToanBm" target="_blank" rel="noreferrer" className="social-button">
+                <img src="/icon/github.svg" alt="GitHub" />
+              </a>
+              <a href="https://x.com/buiminhtoan1985" target="_blank" rel="noreferrer" className="social-button">
+                <img src="/icon/x.svg" alt="X" />
+              </a>
+              <a href="https://discord.com/users/toanbm" target="_blank" rel="noreferrer" className="social-button">
+                <img src="/icon/discord.svg" alt="Discord" />
+              </a>
+              <a href="https://t.me/" target="_blank" rel="noreferrer" className="social-button">
+                <img src="/icon/telegram.svg" alt="Telegram" />
+              </a>
             </div>
-          )}
+          </div>
+          <div className="popup-header-desc">
+            Bộ sưu tập NFT độc quyền của DreamHackers.
+          </div>
         </div>
-
-        <div className="popup-stages-card">
-          {/* Block ngang: Live + Countdown */}
-          <div className="popup-mint-status-row" style={{ minHeight: 56, alignItems: 'center', marginBottom: 8 }}>
-            <div className="popup-mint-card live-card" style={{ minHeight: 32, display: 'flex', alignItems: 'center' }}>
-              <span className="popup-status-dot" />
-              <span className="popup-live-text">{isLive ? "Live" : beforeStart ? "Soon" : "Ended"}</span>
-            </div>
-            <div className="popup-mint-card countdown-card" style={{ flex: 1, minHeight: 32, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <div className="countdown-label-row" style={{ minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <span className="popup-stages-countdown-label">
-                  {beforeStart ? "START IN:" : isLive ? "ENDS IN:" : "ENDED"}
-                </span>
-                <span className="popup-stages-countdown">
-                  {beforeStart
-                    ? formatCountdown(countdown)
-                    : isLive
+        <div className="popup-right">
+          <div className="auction-status-card">
+            <div className="popup-mint-status-row">
+              <div className="popup-mint-card live-card">
+                <span className="popup-status-dot" />
+                <span className="popup-live-text">{isLive ? "Live" : beforeStart ? "Soon" : "Ended"}</span>
+              </div>
+              <div className="popup-mint-card countdown-card">
+                <div className="countdown-label-row">
+                  <span className="popup-stages-countdown-label">
+                    {beforeStart ? "START IN:" : isLive ? "ENDS IN:" : "ENDED"}
+                  </span>
+                  <span className="popup-stages-countdown">
+                    {beforeStart
                       ? formatCountdown(countdown)
-                      : "Ended"}
-                </span>
-              </div>
-              <div className="popup-progress-bar" style={{ width: '100%', marginTop: 8 }}>
-                <div
-                  className="popup-progress-bar-inner"
-                  style={{ width: `${percentTime}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-          <div className="popup-stages-price-line">
-            Reserve Price <strong>{reservePrice ? `${reservePrice} ${symbol}` : "Loading..."}</strong>
-          </div>
-        </div>
-
-        <div className="popup-price-card">
-          {/* Input nhập giá bid */}
-          <div className="popup-price-quantity-row">
-            <div className="popup-price-label-group">
-              <div className="popup-price-label">Reserve Price</div>
-              <div className="popup-price-value">
-                {bidAmount ? `${bidAmount} ${symbol}` : reservePrice ? `${reservePrice} ${symbol}` : "..."}
+                      : isLive
+                        ? formatCountdown(countdown)
+                        : "Ended"}
+                  </span>
+                </div>
+                <div className="popup-progress-bar">
+                  <div
+                    className="popup-progress-bar-inner"
+                    style={{ width: `${percentTime}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
-            <div className="popup-amount-row">
-              <button onClick={handleDecrease}>-</button>
-              <input
-                type="number"
-                min={reservePrice || "0"}
-                step="0.01"
-                value={bidAmount}
-                onChange={handleBidInput}
-                placeholder={reservePrice ? reservePrice : "Bid"}
-                className="popup-bid-input"
-              />
-              <button onClick={handleIncrease}>+</button>
+            <div className="popup-stages-price-line">
+              Reserve Price <strong>{reservePrice ? `${reservePrice} ${symbol}` : "Loading..."}</strong>
             </div>
           </div>
-
-          <div className="popup-mint-fee-row">
-            <span>Bid Fee</span>
-            <span>{bidAmount && !isNaN(Number(bidAmount)) ? (Math.round(Number(bidAmount) * 0.05 * 1000) / 1000).toFixed(3) : "0.000"} {symbol}</span>
+          <div className="popup-price-card">
+            <div className="popup-price-quantity-row">
+              <div className="popup-price-label-group">
+                <div className="popup-price-label">Reserve Price</div>
+                <div className="popup-price-value">
+                  {bidAmount ? `${bidAmount} ${symbol}` : reservePrice ? `${reservePrice} ${symbol}` : "..."}
+                </div>
+              </div>
+              <div className="popup-amount-row">
+                <button onClick={handleDecrease}>-</button>
+                <input
+                  type="number"
+                  min={reservePrice || "0"}
+                  step="1"
+                  value={bidAmount}
+                  onChange={handleBidInput}
+                  placeholder={reservePrice ? reservePrice : "Bid"}
+                  className="popup-bid-input"
+                />
+                <button onClick={handleIncrease}>+</button>
+              </div>
+            </div>
+            <div className="popup-mint-fee-row">
+              <span>Bid Fee</span>
+              <span>{bidAmount && !isNaN(Number(bidAmount)) ? (Math.ceil(Number(bidAmount) * 0.05)).toString() : "0"} {symbol}</span>
+            </div>
           </div>
-        </div>
-
-        <div className="popup-action">
-          <button
-            className="mint-button"
-            onClick={handleBid}
-            disabled={minting || !isMintLive || !signer || !bidAmount || (reservePrice && parseFloat(bidAmount) < parseFloat(reservePrice))}
-          >
-            {!signer ? "Connect Wallet" : minting ? "Bidding..." : "Place Bid"}
-          </button>
+          <div className="popup-action">
+            <button
+              className="mint-button"
+              onClick={handleBid}
+              disabled={
+                minting ||
+                !isMintLive ||
+                !signer ||
+                !bidAmount ||
+                (reservePrice !== null && bidAmount !== "" && parseInt(bidAmount) < parseInt(reservePrice))
+              }
+            >
+              {!signer ? "Connect Wallet" : minting ? "Bidding..." : "Place Bid"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default MainPanel; 
+export default MainPanel;
